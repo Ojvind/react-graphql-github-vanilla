@@ -1,3 +1,10 @@
+### ---
+
+This is a boilerplate project developed according to the instructions [here](https://www.robinwieruch.de/react-with-graphql-tutorial/)
+#### /öje
+
+### ---
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
