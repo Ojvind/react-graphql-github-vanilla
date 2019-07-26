@@ -1,7 +1,7 @@
 import React from 'react';
 import Repository from './repository';
 
-export default ({ organization, errors, onFetchMoreIssues, onStarRepository }) => {
+export default ({ repositoryOwner, errors, onFetchMoreIssues, onStarRepository }) => {
   if (errors) {
     return (
       <p>
@@ -14,11 +14,11 @@ export default ({ organization, errors, onFetchMoreIssues, onStarRepository }) =
   return (
     <div>
       <p>
-        <strong>Issues from Organization:</strong>
-        <a href={organization.url}>{organization.name}</a>
+        <strong>Issues from repositoryOwner:</strong>
+        <a href={repositoryOwner.url}>{repositoryOwner.name}</a>
       </p>
       <Repository
-        repository={organization.repository}
+        repository={repositoryOwner.repository}
         onFetchMoreIssues={onFetchMoreIssues}
         onStarRepository={onStarRepository}
       />

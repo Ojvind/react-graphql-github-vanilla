@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import axios from 'axios';
-import Organization from './components/organization';
+import RepositoryOwner from './components/repositoryOwner';
+import queries from './queries';
 
 const TITLE = 'React GraphQL GitHub Client';
 
@@ -13,72 +14,14 @@ const axiosGitHubGraphQL = axios.create({
   },
 });
 
-const GET_ISSUES_OF_REPOSITORY = `
-  query ($organization: String!, $repository: String!, $cursor: String) {
-    organization(login: $organization) {
-      name
-      url
-      repository(name: $repository) {
-        id
-        name
-        url
-        stargazers {
-          totalCount
-        }
-        viewerHasStarred
-        issues(first: 5, after: $cursor, states: [OPEN]) {
-          edges {
-            node {
-              id
-              title
-              url
-              reactions(last: 3) {
-                edges {
-                  node {
-                    id
-                    content
-                  }
-                }
-              }
-            }
-          }
-          totalCount
-          pageInfo {
-            endCursor
-            hasNextPage
-          }
-        }
-      }
-    }
-  }
-`;
-
-const ADD_STAR = `
-  mutation ($repositoryId: ID!) {
-    addStar(input:{starrableId:$repositoryId}) {
-      starrable {
-        viewerHasStarred
-      }
-    }
-  }
-`;
-
-const REMOVE_STAR = `
-  mutation ($repositoryId: ID!) {
-    removeStar(input:{starrableId:$repositoryId}) {
-      starrable {
-        viewerHasStarred
-      }
-    }
-  }
-`;
-
 const getIssuesOfRepository = (path, cursor) => {
-  const [organization, repository] = path.split('/');
-
+  console.log('------------------------------------');
+  console.log(queries);
+  console.log('------------------------------------');
+  const [login, repository] = path.split('/');
   return axiosGitHubGraphQL.post('', {
-    query: GET_ISSUES_OF_REPOSITORY,
-    variables: { organization, repository, cursor },
+    query: queries.GET_ISSUES_OF_REPOSITORY,
+    variables: { login, repository, cursor },
   });
 };
 
@@ -87,22 +30,22 @@ const resolveIssuesQuery = (queryResult, cursor) => state => {
 
   if (!cursor) {
     return {
-      organization: data.organization,
+      repositoryOwner: data.repositoryOwner,
       errors,
     };
   }
 
-  const { edges: oldIssues } = state.organization.repository.issues;
-  const { edges: newIssues } = data.organization.repository.issues;
+  const { edges: oldIssues } = state.repositoryOwner.repository.issues;
+  const { edges: newIssues } = data.repositoryOwner.repository.issues;
   const updatedIssues = [...oldIssues, ...newIssues];
 
   return {
-    organization: {
-      ...data.organization,
+    repositoryOwner: {
+      ...data.repositoryOwner,
       repository: {
-        ...data.organization.repository,
+        ...data.repositoryOwner.repository,
         issues: {
-          ...data.organization.repository.issues,
+          ...data.repositoryOwner.repository.issues,
           edges: updatedIssues,
         },
       },
@@ -113,7 +56,7 @@ const resolveIssuesQuery = (queryResult, cursor) => state => {
 
 const addStarToRepository = repositoryId => {
   return axiosGitHubGraphQL.post('', {
-    query: ADD_STAR,
+    query: queries.ADD_STAR,
     variables: { repositoryId },
   });
 };
@@ -123,14 +66,14 @@ const resolveAddStarMutation = mutationResult => state => {
     viewerHasStarred,
   } = mutationResult.data.data.addStar.starrable;
 
-  const { totalCount } = state.organization.repository.stargazers;
+  const { totalCount } = state.repositoryOwner.repository.stargazers;
 
   return {
     ...state,
-    organization: {
-      ...state.organization,
+    repositoryOwner: {
+      ...state.repositoryOwner,
       repository: {
-        ...state.organization.repository,
+        ...state.repositoryOwner.repository,
         viewerHasStarred,
         stargazers: {
           totalCount: totalCount + 1,
@@ -142,7 +85,7 @@ const resolveAddStarMutation = mutationResult => state => {
 
 const removeStarFromRepository = repositoryId => {
   return axiosGitHubGraphQL.post('', {
-    query: REMOVE_STAR,
+    query: queries.REMOVE_STAR,
     variables: { repositoryId },
   });
 };
@@ -152,14 +95,14 @@ const resolveRemoveStarMutation = mutationResult => state => {
     viewerHasStarred,
   } = mutationResult.data.data.removeStar.starrable;
 
-  const { totalCount } = state.organization.repository.stargazers;
+  const { totalCount } = state.repositoryOwner.repository.stargazers;
 
   return {
     ...state,
-    organization: {
-      ...state.organization,
+    repositoryOwner: {
+      ...state.repositoryOwner,
       repository: {
-        ...state.organization.repository,
+        ...state.repositoryOwner.repository,
         viewerHasStarred,
         stargazers: {
           totalCount: totalCount - 1,
@@ -171,8 +114,8 @@ const resolveRemoveStarMutation = mutationResult => state => {
 
 class App extends Component {
   state = {
-    path: 'the-road-to-learn-react/the-road-to-learn-react',
-    organization: null,
+    path: 'Ojvind/react-graphql-github-vanilla',
+    repositoryOwner: null,
     errors: null,
   };
 
@@ -199,7 +142,7 @@ class App extends Component {
   onFetchMoreIssues = () => {
     const {
       endCursor,
-    } = this.state.organization.repository.issues.pageInfo;
+    } = this.state.repositoryOwner.repository.issues.pageInfo;
 
     this.onFetchFromGitHub(this.state.path, endCursor);
   };
@@ -217,7 +160,7 @@ class App extends Component {
   };
 
   render() {
-    const { path, organization, errors } = this.state;
+    const { path, repositoryOwner, errors } = this.state;
 
     return (
       <div>
@@ -239,9 +182,9 @@ class App extends Component {
 
         <hr />
 
-        {organization ? (
-          <Organization
-            organization={organization}
+        {repositoryOwner ? (
+          <RepositoryOwner
+            repositoryOwner={repositoryOwner}
             errors={errors}
             onFetchMoreIssues={this.onFetchMoreIssues}
             onStarRepository={this.onStarRepository}
